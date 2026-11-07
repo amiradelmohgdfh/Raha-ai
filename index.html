@@ -3,131 +3,403 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RAHA AI Trading Assistant</title>
+
 <style>
 *{box-sizing:border-box}
 body{
- margin:0;
- background:#0b1220;
- color:#e5e7eb;
- font-family:Tahoma,Arial,sans-serif;
+ margin:0;background:#0b1220;color:#e5e7eb;
+ font-family:Tahoma,Arial,sans-serif
 }
 header{
- padding:20px;
- background:#111c30;
- border-bottom:1px solid #26354c;
+ padding:20px;background:#111c30;
+ border-bottom:1px solid #26354c
 }
 .logo{font-size:25px;font-weight:bold;color:#38bdf8}
 .subtitle{font-size:12px;color:#94a3b8;margin-top:7px}
 main{padding:15px;max-width:1100px;margin:auto}
 .panel{
- background:#111c30;
- border:1px solid #26354c;
- border-radius:12px;
- padding:15px;
- margin-bottom:15px;
+ background:#111c30;border:1px solid #26354c;
+ border-radius:12px;padding:15px;margin-bottom:15px
 }
 h3{color:#38bdf8;margin-top:0}
-.status{color:#fbbf24;font-size:13px}
-.chart{
- height:500px;
- width:100%;
-}
+.status{font-size:13px;color:#fbbf24}
+.chart{height:500px;width:100%}
 .chart iframe{width:100%;height:100%;border:0}
 .info{
- display:grid;
- grid-template-columns:repeat(2,1fr);
- gap:10px;
+ display:grid;grid-template-columns:repeat(2,1fr);gap:10px
 }
 .item{
- background:#17243a;
- padding:15px;
- border-radius:9px;
+ background:#17243a;padding:15px;border-radius:9px
 }
 .item span{display:block;color:#94a3b8;font-size:12px}
-.item strong{display:block;margin-top:8px}
-footer{
- text-align:center;
- color:#64748b;
- padding:25px;
- font-size:12px;
+.item strong{display:block;margin-top:8px;font-size:18px}
+.tf-grid{
+ display:grid;grid-template-columns:repeat(2,1fr);gap:10px
 }
+.tf-card{
+ background:#17243a;padding:13px;border-radius:9px;
+ border:1px solid #26354c
+}
+.tf-title{color:#38bdf8;font-weight:bold;margin-bottom:12px}
+.value{display:flex;justify-content:space-between;
+ gap:8px;margin:9px 0;font-size:13px}
+.value strong{direction:ltr}
+.up{color:#4ade80}
+.down{color:#fb7185}
+.muted{color:#94a3b8}
+footer{text-align:center;color:#64748b;padding:25px;font-size:12px}
 @media(max-width:500px){
  .chart{height:420px}
+ .tf-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
+
 <body>
 
 <header>
  <div class="logo">RAHA AI</div>
- <div class="subtitle">هوشمندترین دستیار تحلیل بازار</div>
+ <div class="subtitle">Multi Timeframe Trading Assistant</div>
 </header>
 
 <main>
 
- <section class="panel">
-  <h3>پنل معاملاتی طلا</h3>
-  <div class="status">● نمودار زنده TradingView</div>
-  <div class="chart">
-   <div class="tradingview-widget-container"
-        style="height:100%;width:100%">
-    <div class="tradingview-widget-container__widget"
-         style="height:100%;width:100%"></div>
-    <script type="text/javascript"
-      src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"
-      async>
-    {
-      "autosize": true,
-      "symbol": "OANDA:XAUUSD",
-      "interval": "60",
-      "timezone": "Etc/UTC",
-      "theme": "dark",
-      "style": "1",
-      "locale": "en",
-      "allow_symbol_change": false,
-      "calendar": false,
-      "support_host": "https://www.tradingview.com"
-    }
-    </script>
-   </div>
+<section class="panel">
+ <h3>پنل معاملاتی طلا</h3>
+ <div class="status">● نمودار TradingView</div>
+ <div class="chart">
+  <div class="tradingview-widget-container"
+       style="height:100%;width:100%">
+   <div class="tradingview-widget-container__widget"
+        style="height:100%;width:100%"></div>
+   <script type="text/javascript"
+    src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"
+    async>
+   {
+    "autosize":true,
+    "symbol":"OANDA:XAUUSD",
+    "interval":"60",
+    "timezone":"Etc/UTC",
+    "theme":"dark",
+    "style":"1",
+    "locale":"en",
+    "allow_symbol_change":false,
+    "calendar":false,
+    "support_host":"https://www.tradingview.com"
+   }
+   </script>
   </div>
- </section>
+ </div>
+</section>
 
- <section class="panel">
-  <h3>وضعیت تحلیل RAHA AI</h3>
-  <div class="info">
-   <div class="item">
-    <span>نماد معاملاتی</span>
-    <strong>XAUUSD</strong>
-   </div>
-   <div class="item">
-    <span>تایم‌فریم اصلی</span>
-    <strong>1H</strong>
-   </div>
-   <div class="item">
-    <span>MACD</span>
-    <strong>در انتظار اتصال</strong>
-   </div>
-   <div class="item">
-    <span>RSI</span>
-    <strong>در انتظار اتصال</strong>
-   </div>
+<section class="panel">
+ <h3>وضعیت موتور RAHA AI</h3>
+ <div class="info">
+  <div class="item">
+   <span>نماد</span>
+   <strong>XAUUSD</strong>
   </div>
- </section>
+  <div class="item">
+   <span>منبع اطلاعات</span>
+   <strong>XAUS API</strong>
+  </div>
+  <div class="item">
+   <span>MACD</span>
+   <strong id="macdStatus">در انتظار داده</strong>
+  </div>
+  <div class="item">
+   <span>RSI</span>
+   <strong id="rsiStatus">در انتظار داده</strong>
+  </div>
+ </div>
+</section>
 
- <section class="panel">
-  <h3>سیگنال معاملاتی</h3>
-  <p>هنوز موتور تحلیل هوشمند فعال نشده است.</p>
-  <p class="status">در حال آماده‌سازی موتور تحلیل RAHA</p>
- </section>
+<section class="panel">
+ <h3>تحلیل چندتایم‌فریمی</h3>
+ <div id="connection" class="status">
+  در حال دریافت اطلاعات طلا...
+ </div>
+ <div id="lastUpdate" class="muted"
+      style="font-size:12px;margin:10px 0"></div>
+ <div class="tf-grid" id="results">
+  <div class="tf-card">در حال محاسبه...</div>
+ </div>
+</section>
+
+<section class="panel">
+ <h3>سیگنال معاملاتی RAHA</h3>
+ <p id="signal">منتظر دریافت اطلاعات اندیکاتورها...</p>
+ <div class="status">
+  این نسخه فقط محاسبه اندیکاتورها را انجام می‌دهد.
+  هنوز سیگنال خرید و فروش فعال نیست.
+ </div>
+</section>
 
 </main>
 
 <footer>
-RAHA AI © 2026 | Trading Assistant
+RAHA AI © 2026 | Independent Indicator Engine
 </footer>
+
+<script>
+const API = "https://xaus.com/api/v1/chart";
+
+const configs = [
+ {name:"1M", interval:"1m", range:"1d"},
+ {name:"5M", interval:"5m", range:"5d"},
+ {name:"15M",interval:"15m",range:"5d"},
+ {name:"1H", interval:"60m",range:"3mo"}
+];
+
+function ema(values, period){
+ const result = [];
+ if(values.length < period) return result;
+
+ let sum = 0;
+ for(let i=0;i<period;i++) sum += values[i];
+
+ let previous = sum / period;
+ result[period-1] = previous;
+
+ const alpha = 2 / (period+1);
+
+ for(let i=period;i<values.length;i++){
+  previous = values[i]*alpha + previous*(1-alpha);
+  result[i] = previous;
+ }
+ return result;
+}
+
+function calculateMACD(closes){
+ const fast = ema(closes,12);
+ const slow = ema(closes,26);
+
+ const line = closes.map((_,i)=>
+  fast[i] !== undefined && slow[i] !== undefined
+  ? fast[i]-slow[i] : null
+ );
+
+ const valid = line.filter(v=>v!==null);
+ const signalValues = ema(valid,9);
+ const macdLine = line[line.length-1];
+
+ if(macdLine===null || !signalValues.length)
+  return null;
+
+ const signal = signalValues[signalValues.length-1];
+
+ return {
+  macd:macdLine,
+  signal:signal,
+  hist:macdLine-signal
+ };
+}
+
+function calculateRSI(closes,period=14){
+ if(closes.length < period+1) return null;
+
+ let gain=0, loss=0;
+
+ for(let i=1;i<=period;i++){
+  const change=closes[i]-closes[i-1];
+  if(change>0) gain+=change;
+  else loss-=change;
+ }
+
+ let avgGain=gain/period;
+ let avgLoss=loss/period;
+
+ for(let i=period+1;i<closes.length;i++){
+  const change=closes[i]-closes[i-1];
+  avgGain=(avgGain*(period-1)+Math.max(change,0))/period;
+  avgLoss=(avgLoss*(period-1)+Math.max(-change,0))/period;
+ }
+
+ if(avgLoss===0) return 100;
+
+ return 100-(100/(1+avgGain/avgLoss));
+}
+
+function aggregate4H(bars){
+ const groups={};
+
+ bars.forEach(bar=>{
+  const key=Math.floor(bar.t/(4*3600));
+  if(!groups[key]){
+   groups[key]={
+    t:key*4*3600,
+    o:bar.o,h:bar.h,l:bar.l,c:bar.c
+   };
+  }else{
+   groups[key].h=Math.max(groups[key].h,bar.h);
+   groups[key].l=Math.min(groups[key].l,bar.l);
+   groups[key].c=bar.c;
+  }
+ });
+
+ return Object.values(groups).sort((a,b)=>a.t-b.t);
+}
+
+async function getCandles(config){
+ const url=API+
+  "?symbol=xau"+
+  "&range="+config.range+
+  "&interval="+config.interval;
+
+ const response=await fetch(url);
+
+ if(!response.ok)
+  throw new Error("خطای دریافت "+config.name+": "+response.status);
+
+ const data=await response.json();
+
+ if(!Array.isArray(data.points))
+  throw new Error("ساختار اطلاعات "+config.name+" نامعتبر است");
+
+ return data.points.map(p=>({
+  t:Number(p.t),
+  o:Number(p.o),
+  h:Number(p.h),
+  l:Number(p.l),
+  c:Number(p.c)
+ })).filter(p=>
+  Number.isFinite(p.t) &&
+  Number.isFinite(p.c) &&
+  p.c>0
+ ).sort((a,b)=>a.t-b.t);
+}
+
+function format(value){
+ return value===null || !Number.isFinite(value)
+  ? "--" : value.toFixed(3);
+}
+
+function card(name,macd,rsi,count){
+ if(!macd || rsi===null){
+  return `<div class="tf-card">
+   <div class="tf-title">${name}</div>
+   <div class="muted">داده کافی برای محاسبه نیست</div>
+   <small>تعداد کندل: ${count}</small>
+  </div>`;
+ }
+
+ const direction=macd.hist>=0 ? "صعودی":"نزولی";
+ const rsiClass=rsi>=70?"down":rsi<=30?"up":"muted";
+
+ return `
+ <div class="tf-card">
+  <div class="tf-title">تایم‌فریم ${name}</div>
+
+  <div class="value">
+   <span>MACD</span>
+   <strong>${format(macd.macd)}</strong>
+  </div>
+
+  <div class="value">
+   <span>Signal</span>
+   <strong>${format(macd.signal)}</strong>
+  </div>
+
+  <div class="value">
+   <span>Histogram</span>
+   <strong class="${macd.hist>=0?'up':'down'}">
+    ${format(macd.hist)}
+   </strong>
+  </div>
+
+  <div class="value">
+   <span>وضعیت MACD</span>
+   <strong class="${macd.hist>=0?'up':'down'}">
+    ${direction}
+   </strong>
+  </div>
+
+  <div class="value">
+   <span>RSI (14)</span>
+   <strong class="${rsiClass}">${format(rsi)}</strong>
+  </div>
+
+  <small class="muted">تعداد کندل: ${count}</small>
+ </div>`;
+}
+
+async function update(){
+ const connection=document.getElementById("connection");
+ const results=document.getElementById("results");
+
+ connection.textContent="در حال دریافت اطلاعات...";
+ results.innerHTML="";
+
+ try{
+  const all=await Promise.all(
+   configs.map(getCandles)
+  );
+
+  const fourH=aggregate4H(all[3]);
+
+  const datasets=[
+   {name:"1M",bars:all[0]},
+   {name:"5M",bars:all[1]},
+   {name:"15M",bars:all[2]},
+   {name:"1H",bars:all[3]},
+   {name:"4H",bars:fourH}
+  ];
+
+  const cards=[];
+  let latestTime=0;
+  let success=0;
+
+  datasets.forEach(item=>{
+   const closes=item.bars.map(b=>b.c);
+   const macd=calculateMACD(closes);
+   const rsi=calculateRSI(closes);
+
+   if(macd && rsi!==null) success++;
+
+   cards.push(card(item.name,macd,rsi,closes.length));
+
+   if(item.bars.length){
+    latestTime=Math.max(
+     latestTime,
+     item.bars[item.bars.length-1].t
+    );
+   }
+  });
+
+  results.innerHTML=cards.join("");
+
+  if(success===5){
+   connection.textContent="● اتصال موفق | هر ۵ تایم‌فریم محاسبه شدند";
+   document.getElementById("macdStatus").textContent="فعال";
+   document.getElementById("rsiStatus").textContent="فعال";
+  }else{
+   connection.textContent=
+    "اتصال برقرار است؛ اطلاعات بعضی تایم‌فریم‌ها ناقص است.";
+  }
+
+  if(latestTime){
+   document.getElementById("lastUpdate").textContent=
+    "زمان آخرین کندل دریافتی: "+
+    new Date(latestTime*1000).toLocaleString("fa-IR");
+  }
+
+  document.getElementById("signal").textContent=
+   "محاسبات اندیکاتورها انجام شد؛ موتور صدور سیگنال هنوز فعال نیست.";
+
+ }catch(error){
+  connection.textContent="خطا: "+error.message;
+  document.getElementById("macdStatus").textContent="خطا";
+  document.getElementById("rsiStatus").textContent="خطا";
+  document.getElementById("signal").textContent=
+   "اطلاعات کافی دریافت نشد. اتصال اینترنت یا منبع داده را بررسی کنید.";
+ }
+}
+
+update();
+setInterval(update,60000);
+</script>
 
 </body>
 </html>
