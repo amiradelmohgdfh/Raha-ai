@@ -3,7 +3,7 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RAHA AI Trading Assistant</title>
 
 <style>
@@ -26,7 +26,6 @@ main{padding:15px;max-width:1100px;margin:auto}
 h3{color:#38bdf8;margin-top:0}
 .status{font-size:13px;color:#fbbf24}
 .chart{height:500px;width:100%}
-.chart iframe{width:100%;height:100%;border:0}
 .info{
  display:grid;grid-template-columns:repeat(2,1fr);gap:10px
 }
@@ -43,12 +42,15 @@ h3{color:#38bdf8;margin-top:0}
  border:1px solid #26354c
 }
 .tf-title{color:#38bdf8;font-weight:bold;margin-bottom:12px}
-.value{display:flex;justify-content:space-between;
- gap:8px;margin:9px 0;font-size:13px}
-.value strong{direction:ltr}
+.value{
+ display:flex;justify-content:space-between;
+ gap:8px;margin:10px 0;font-size:13px
+}
+.value strong{direction:ltr;text-align:left}
 .up{color:#4ade80}
 .down{color:#fb7185}
 .muted{color:#94a3b8}
+.divider{border:0;border-top:1px solid #26354c}
 footer{text-align:center;color:#64748b;padding:25px;font-size:12px}
 @media(max-width:500px){
  .chart{height:420px}
@@ -98,7 +100,7 @@ footer{text-align:center;color:#64748b;padding:25px;font-size:12px}
  <h3>وضعیت موتور RAHA AI</h3>
  <div class="info">
   <div class="item">
-   <span>نماد</span>
+   <span>نماد معاملاتی</span>
    <strong>XAUUSD</strong>
   </div>
   <div class="item">
@@ -117,119 +119,124 @@ footer{text-align:center;color:#64748b;padding:25px;font-size:12px}
 </section>
 
 <section class="panel">
- <h3>تحلیل چندتایم‌فریمی</h3>
+ <h3>تحلیل چندتایم‌فریمی RAHA</h3>
  <div id="connection" class="status">
   در حال دریافت اطلاعات طلا...
  </div>
  <div id="lastUpdate" class="muted"
       style="font-size:12px;margin:10px 0"></div>
- <div class="tf-grid" id="results">
+ <div id="results" class="tf-grid">
   <div class="tf-card">در حال محاسبه...</div>
  </div>
 </section>
 
 <section class="panel">
- <h3>سیگنال معاملاتی RAHA</h3>
- <p id="signal">منتظر دریافت اطلاعات اندیکاتورها...</p>
+ <h3>نتیجه واگرایی‌ها</h3>
+ <p id="signal">در انتظار تحلیل...</p>
  <div class="status">
-  این نسخه فقط محاسبه اندیکاتورها را انجام می‌دهد.
-  هنوز سیگنال خرید و فروش فعال نیست.
+  واگرایی به‌تنهایی مجوز ورود به معامله نیست.
  </div>
 </section>
 
 </main>
 
 <footer>
-RAHA AI © 2026 | Independent Indicator Engine
+RAHA AI © 2026 | Trading Assistant
 </footer>
 
 <script>
-const API = "https://xaus.com/api/v1/chart";
+"use strict";
 
-const configs = [
- {name:"1M", interval:"1m", range:"1d"},
- {name:"5M", interval:"5m", range:"5d"},
+const API="https://xaus.com/api/v1/chart";
+
+const configs=[
+ {name:"1M",interval:"1m",range:"1d"},
+ {name:"5M",interval:"5m",range:"5d"},
  {name:"15M",interval:"15m",range:"5d"},
- {name:"1H", interval:"60m",range:"3mo"}
+ {name:"1H",interval:"60m",range:"3mo"}
 ];
 
-function ema(values, period){
- const result = [];
- if(values.length < period) return result;
+function ema(values,period){
+ const result=Array(values.length).fill(null);
+ const valid=values.map((v,i)=>({v,i}))
+  .filter(x=>x.v!==null&&Number.isFinite(x.v));
 
- let sum = 0;
- for(let i=0;i<period;i++) sum += values[i];
+ if(valid.length<period)return result;
 
- let previous = sum / period;
- result[period-1] = previous;
+ let sum=0;
+ for(let i=0;i<period;i++)sum+=valid[i].v;
 
- const alpha = 2 / (period+1);
+ let previous=sum/period;
+ result[valid[period-1].i]=previous;
 
- for(let i=period;i<values.length;i++){
-  previous = values[i]*alpha + previous*(1-alpha);
-  result[i] = previous;
+ const alpha=2/(period+1);
+
+ for(let i=period;i<valid.length;i++){
+  previous=valid[i].v*alpha+previous*(1-alpha);
+  result[valid[i].i]=previous;
  }
  return result;
 }
 
 function calculateMACD(closes){
- const fast = ema(closes,12);
- const slow = ema(closes,26);
+ const fast=ema(closes,12);
+ const slow=ema(closes,26);
 
- const line = closes.map((_,i)=>
-  fast[i] !== undefined && slow[i] !== undefined
-  ? fast[i]-slow[i] : null
+ const line=closes.map((_,i)=>
+  fast[i]!==null&&slow[i]!==null?
+  fast[i]-slow[i]:null
  );
 
- const valid = line.filter(v=>v!==null);
- const signalValues = ema(valid,9);
- const macdLine = line[line.length-1];
+ const signal=ema(line,9);
 
- if(macdLine===null || !signalValues.length)
-  return null;
+ const hist=line.map((v,i)=>
+  v!==null&&signal[i]!==null?
+  v-signal[i]:null
+ );
 
- const signal = signalValues[signalValues.length-1];
-
- return {
-  macd:macdLine,
-  signal:signal,
-  hist:macdLine-signal
- };
+ return {line,signal,hist};
 }
 
 function calculateRSI(closes,period=14){
- if(closes.length < period+1) return null;
+ const result=Array(closes.length).fill(null);
+ if(closes.length<=period)return result;
 
- let gain=0, loss=0;
+ let gain=0,loss=0;
 
  for(let i=1;i<=period;i++){
   const change=closes[i]-closes[i-1];
-  if(change>0) gain+=change;
-  else loss-=change;
+  gain+=Math.max(change,0);
+  loss+=Math.max(-change,0);
  }
 
  let avgGain=gain/period;
  let avgLoss=loss/period;
 
+ result[period]=avgLoss===0?100:
+  100-100/(1+avgGain/avgLoss);
+
  for(let i=period+1;i<closes.length;i++){
   const change=closes[i]-closes[i-1];
+
   avgGain=(avgGain*(period-1)+Math.max(change,0))/period;
   avgLoss=(avgLoss*(period-1)+Math.max(-change,0))/period;
+
+  result[i]=avgLoss===0?100:
+   100-100/(1+avgGain/avgLoss);
  }
 
- if(avgLoss===0) return 100;
-
- return 100-(100/(1+avgGain/avgLoss));
+ return result;
 }
 
 function aggregate4H(bars){
  const groups={};
 
  bars.forEach(bar=>{
-  const key=Math.floor(bar.t/(4*3600));
+  const key=Math.floor(bar.t/14400);
+
   if(!groups[key]){
    groups[key]={
-    t:key*4*3600,
+    t:key*14400,
     o:bar.o,h:bar.h,l:bar.l,c:bar.c
    };
   }else{
@@ -250,13 +257,15 @@ async function getCandles(config){
 
  const response=await fetch(url);
 
- if(!response.ok)
-  throw new Error("خطای دریافت "+config.name+": "+response.status);
+ if(!response.ok){
+  throw new Error("خطای دریافت "+config.name);
+ }
 
  const data=await response.json();
 
- if(!Array.isArray(data.points))
-  throw new Error("ساختار اطلاعات "+config.name+" نامعتبر است");
+ if(!Array.isArray(data.points)){
+  throw new Error("ساختار داده نامعتبر است");
+ }
 
  return data.points.map(p=>({
   t:Number(p.t),
@@ -265,28 +274,125 @@ async function getCandles(config){
   l:Number(p.l),
   c:Number(p.c)
  })).filter(p=>
-  Number.isFinite(p.t) &&
-  Number.isFinite(p.c) &&
+  Number.isFinite(p.t)&&
+  Number.isFinite(p.h)&&
+  Number.isFinite(p.l)&&
+  Number.isFinite(p.c)&&
   p.c>0
  ).sort((a,b)=>a.t-b.t);
 }
 
-function format(value){
- return value===null || !Number.isFinite(value)
-  ? "--" : value.toFixed(3);
+function findExtremeIndex(bars,start,end,type){
+ let index=-1;
+
+ for(let i=start;i<end;i++){
+  if(!Number.isFinite(bars[i][type]))continue;
+
+  if(index===-1||
+   (type==="l"&&bars[i].l<bars[index].l)||
+   (type==="h"&&bars[i].h>bars[index].h)){
+   index=i;
+  }
+ }
+ return index;
 }
 
-function card(name,macd,rsi,count){
- if(!macd || rsi===null){
-  return `<div class="tf-card">
-   <div class="tf-title">${name}</div>
-   <div class="muted">داده کافی برای محاسبه نیست</div>
-   <small>تعداد کندل: ${count}</small>
-  </div>`;
+function divergence(bars,rsi,macd){
+ const n=bars.length;
+
+ if(n<45){
+  return {
+   rsi:"داده کافی نیست",
+   macd:"داده کافی نیست",
+   strength:"نامشخص"
+  };
  }
 
- const direction=macd.hist>=0 ? "صعودی":"نزولی";
- const rsiClass=rsi>=70?"down":rsi<=30?"up":"muted";
+ const split=n-10;
+ const oldStart=split-10;
+
+ const oldLow=findExtremeIndex(bars,oldStart,split,"l");
+ const newLow=findExtremeIndex(bars,split,n,"l");
+
+ const oldHigh=findExtremeIndex(bars,oldStart,split,"h");
+ const newHigh=findExtremeIndex(bars,split,n,"h");
+
+ let rsiDiv="بدون واگرایی";
+ let macdDiv="بدون واگرایی";
+
+ function valid(arr,i){
+  return i>=0&&arr[i]!==null&&
+   arr[i]!==undefined&&Number.isFinite(arr[i]);
+ }
+
+ if(oldLow>=0&&newLow>=0&&
+  valid(rsi,oldLow)&&valid(rsi,newLow)&&
+  bars[newLow].l<bars[oldLow].l&&
+  rsi[newLow]>rsi[oldLow]){
+  rsiDiv="واگرایی مثبت";
+ }
+
+ if(oldHigh>=0&&newHigh>=0&&
+  valid(rsi,oldHigh)&&valid(rsi,newHigh)&&
+  bars[newHigh].h>bars[oldHigh].h&&
+  rsi[newHigh]<rsi[oldHigh]){
+  rsiDiv="واگرایی منفی";
+ }
+
+ if(oldLow>=0&&newLow>=0&&
+  valid(macd,oldLow)&&valid(macd,newLow)&&
+  bars[newLow].l<bars[oldLow].l&&
+  macd[newLow]>macd[oldLow]){
+  macdDiv="واگرایی مثبت";
+ }
+
+ if(oldHigh>=0&&newHigh>=0&&
+  valid(macd,oldHigh)&&valid(macd,newHigh)&&
+  bars[newHigh].h>bars[oldHigh].h&&
+  macd[newHigh]<macd[oldHigh]){
+  macdDiv="واگرایی منفی";
+ }
+
+ let strength="بدون تأیید مشترک";
+
+ if(rsiDiv==="واگرایی مثبت"&&macdDiv==="واگرایی مثبت"){
+  strength="واگرایی مثبت مشترک";
+ }
+
+ if(rsiDiv==="واگرایی منفی"&&macdDiv==="واگرایی منفی"){
+  strength="واگرایی منفی مشترک";
+ }
+
+ return {rsi:rsiDiv,macd:macdDiv,strength};
+}
+
+function format(value){
+ return value===null||!Number.isFinite(value)?
+  "--":value.toFixed(3);
+}
+
+function color(value){
+ if(value==="واگرایی مثبت"||value==="واگرایی مثبت مشترک")
+  return "up";
+
+ if(value==="واگرایی منفی"||value==="واگرایی منفی مشترک")
+  return "down";
+
+ return "muted";
+}
+
+function card(name,bars){
+ const closes=bars.map(b=>b.c);
+ const macd=calculateMACD(closes);
+ const rsi=calculateRSI(closes);
+
+ const last=closes.length-1;
+ const m=macd.line[last];
+ const s=macd.signal[last];
+ const h=macd.hist[last];
+ const r=rsi[last];
+
+ const div=divergence(bars,rsi,macd.hist);
 
  return `
  <div class="tf-card">
@@ -294,34 +400,49 @@ function card(name,macd,rsi,count){
 
   <div class="value">
    <span>MACD</span>
-   <strong>${format(macd.macd)}</strong>
+   <strong>${format(m)}</strong>
   </div>
 
   <div class="value">
    <span>Signal</span>
-   <strong>${format(macd.signal)}</strong>
+   <strong>${format(s)}</strong>
   </div>
 
   <div class="value">
    <span>Histogram</span>
-   <strong class="${macd.hist>=0?'up':'down'}">
-    ${format(macd.hist)}
-   </strong>
+   <strong class="${h>=0?'up':'down'}">${format(h)}</strong>
   </div>
 
   <div class="value">
    <span>وضعیت MACD</span>
-   <strong class="${macd.hist>=0?'up':'down'}">
-    ${direction}
+   <strong class="${h>=0?'up':'down'}">
+    ${h>=0?"صعودی":"نزولی"}
    </strong>
   </div>
 
   <div class="value">
    <span>RSI (14)</span>
-   <strong class="${rsiClass}">${format(rsi)}</strong>
+   <strong>${format(r)}</strong>
   </div>
 
-  <small class="muted">تعداد کندل: ${count}</small>
+  <hr class="divider">
+
+  <div class="value">
+   <span>واگرایی RSI</span>
+   <strong class="${color(div.rsi)}">${div.rsi}</strong>
+  </div>
+
+  <div class="value">
+   <span>واگرایی MACD</span>
+   <strong class="${color(div.macd)}">${div.macd}</strong>
+  </div>
+
+  <div class="value">
+   <span>نتیجه مشترک</span>
+   <strong class="${color(div.strength)}">${div.strength}</strong>
+  </div>
+
+  <small class="muted">تعداد کندل: ${bars.length}</small>
  </div>`;
 }
 
@@ -330,12 +451,9 @@ async function update(){
  const results=document.getElementById("results");
 
  connection.textContent="در حال دریافت اطلاعات...";
- results.innerHTML="";
 
  try{
-  const all=await Promise.all(
-   configs.map(getCandles)
-  );
+  const all=await Promise.all(configs.map(getCandles));
 
   const fourH=aggregate4H(all[3]);
 
@@ -347,53 +465,29 @@ async function update(){
    {name:"4H",bars:fourH}
   ];
 
-  const cards=[];
-  let latestTime=0;
-  let success=0;
+  results.innerHTML=datasets.map(
+   item=>card(item.name,item.bars)
+  ).join("");
 
-  datasets.forEach(item=>{
-   const closes=item.bars.map(b=>b.c);
-   const macd=calculateMACD(closes);
-   const rsi=calculateRSI(closes);
+  const latest=Math.max(...all.flat().map(b=>b.t));
 
-   if(macd && rsi!==null) success++;
+  connection.textContent=
+   "● اتصال موفق | اطلاعات پنج تایم‌فریم دریافت شد";
 
-   cards.push(card(item.name,macd,rsi,closes.length));
+  document.getElementById("lastUpdate").textContent=
+   "زمان آخرین کندل: "+
+   new Date(latest*1000).toLocaleString("fa-IR");
 
-   if(item.bars.length){
-    latestTime=Math.max(
-     latestTime,
-     item.bars[item.bars.length-1].t
-    );
-   }
-  });
-
-  results.innerHTML=cards.join("");
-
-  if(success===5){
-   connection.textContent="● اتصال موفق | هر ۵ تایم‌فریم محاسبه شدند";
-   document.getElementById("macdStatus").textContent="فعال";
-   document.getElementById("rsiStatus").textContent="فعال";
-  }else{
-   connection.textContent=
-    "اتصال برقرار است؛ اطلاعات بعضی تایم‌فریم‌ها ناقص است.";
-  }
-
-  if(latestTime){
-   document.getElementById("lastUpdate").textContent=
-    "زمان آخرین کندل دریافتی: "+
-    new Date(latestTime*1000).toLocaleString("fa-IR");
-  }
+  document.getElementById("macdStatus").textContent="فعال";
+  document.getElementById("rsiStatus").textContent="فعال";
 
   document.getElementById("signal").textContent=
-   "محاسبات اندیکاتورها انجام شد؛ موتور صدور سیگنال هنوز فعال نیست.";
+   "واگرایی‌ها محاسبه شدند؛ هنوز سیگنال ورود صادر نمی‌شود.";
 
  }catch(error){
   connection.textContent="خطا: "+error.message;
-  document.getElementById("macdStatus").textContent="خطا";
-  document.getElementById("rsiStatus").textContent="خطا";
   document.getElementById("signal").textContent=
-   "اطلاعات کافی دریافت نشد. اتصال اینترنت یا منبع داده را بررسی کنید.";
+   "دریافت اطلاعات با مشکل روبه‌رو شد.";
  }
 }
 
