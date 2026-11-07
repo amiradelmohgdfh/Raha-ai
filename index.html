@@ -78,8 +78,8 @@ footer{text-align:center;color:#64748b;padding:25px;font-size:12px}
 
  <select id="symbolSelect">
   <option value="GOLD">طلا - OANDA:XAUUSD</option>
-  <option value="BTC">بیت‌کوین - BINANCE:BTCUSDT</option>
-  <option value="ETH">اتریوم - BINANCE:ETHUSDT</option>
+  <option value="BTC">بیت‌کوین - KRAKEN:BTCUSD</option>
+  <option value="ETH">اتریوم - KRAKEN:ETHUSD</option>
  </select>
 
  <div id="selectedMarket" class="status">
@@ -179,25 +179,25 @@ const markets={
  },
  BTC:{
   name:"بیت‌کوین",
-  symbol:"BINANCE:BTCUSDT",
-  source:"Binance API",
+  symbol:"KRAKEN:BTCUSD",
+  source:"Kraken Public API",
   type:"crypto",
-  apiSymbol:"BTCUSDT"
+  apiSymbol:"XBTUSD"
  },
  ETH:{
   name:"اتریوم",
-  symbol:"BINANCE:ETHUSDT",
-  source:"Binance API",
+  symbol:"KRAKEN:ETHUSD",
+  source:"Kraken Public API",
   type:"crypto",
-  apiSymbol:"ETHUSDT"
+  apiSymbol:"ETHUSD"
  }
 };
 
 const configs=[
- {name:"1M",interval:"1m",range:"1d"},
- {name:"5M",interval:"5m",range:"5d"},
- {name:"15M",interval:"15m",range:"5d"},
- {name:"1H",interval:"60m",range:"3mo"}
+ {name:"1M",interval:"1m",range:"1d",krakenInterval:1},
+ {name:"5M",interval:"5m",range:"5d",krakenInterval:5},
+ {name:"15M",interval:"15m",range:"5d",krakenInterval:15},
+ {name:"1H",interval:"60m",range:"3mo",krakenInterval:60}
 ];
 
 let selectedMarket="GOLD";
@@ -223,7 +223,7 @@ function normalizeTime(t){
  return time;
 }
 
-/* GOLD DATA */
+/* GOLD DATA - UNCHANGED */
 
 async function getGoldCandles(config){
  const url=
@@ -258,44 +258,70 @@ async function getGoldCandles(config){
  ).sort((a,b)=>a.t-b.t);
 }
 
-/* CRYPTO DATA */
+/* KRAKEN CRYPTO DATA */
 
 async function getCryptoCandles(config){
  const market=markets[selectedMarket];
 
  const url=
- "https://api.binance.com/api/v3/klines?symbol="+
- market.apiSymbol+
- "&interval="+config.interval+
- "&limit=1000";
+ "https://api.kraken.com/0/public/OHLC"+
+ "?pair="+encodeURIComponent(market.apiSymbol)+
+ "&interval="+config.krakenInterval;
 
  const response=await fetch(url);
 
  if(!response.ok){
   throw new Error(
-   "دریافت اطلاعات "+market.name+
-   " از Binance ناموفق بود. کد خطا: "+response.status
+   "ارتباط با Kraken ناموفق بود. HTTP "+
+   response.status
   );
  }
 
  const data=await response.json();
 
- if(!Array.isArray(data)){
-  throw new Error("ساختار اطلاعات ارز دیجیتال نامعتبر است");
+ if(!data||!data.result){
+  throw new Error("پاسخ Kraken نامعتبر است");
  }
 
- return data.map(k=>({
+ if(Array.isArray(data.error)&&data.error.length>0){
+  throw new Error(
+   "خطای Kraken: "+data.error.join("، ")
+  );
+ }
+
+ const result=data.result;
+
+ /* Find the actual pair array.
+    Kraken uses different internal pair names. */
+
+ const pairKey=Object.keys(result).find(
+  key=>Array.isArray(result[key])
+ );
+
+ if(!pairKey){
+  throw new Error("اطلاعات کندل در پاسخ Kraken پیدا نشد");
+ }
+
+ const candles=result[pairKey];
+
+ if(!Array.isArray(candles)||candles.length===0){
+  throw new Error("داده کندل دریافت نشد");
+ }
+
+ return candles.map(k=>({
   t:normalizeTime(k[0]),
   o:Number(k[1]),
   h:Number(k[2]),
   l:Number(k[3]),
   c:Number(k[4]),
-  v:Number(k[5])
+  v:Number(k[6]||0)
  })).filter(p=>
   Number.isFinite(p.t)&&
+  Number.isFinite(p.o)&&
   Number.isFinite(p.h)&&
   Number.isFinite(p.l)&&
-  Number.isFinite(p.c)&&p.c>0
+  Number.isFinite(p.c)&&
+  p.c>0
  ).sort((a,b)=>a.t-b.t);
 }
 
@@ -657,6 +683,9 @@ async function update(){
 
  document.getElementById("sourceStatus").textContent=
   market.source;
+
+ document.getElementById("macdStatus").textContent="در حال دریافت";
+ document.getElementById("rsiStatus").textContent="در حال دریافت";
 
  try{
   const all=await Promise.all(
