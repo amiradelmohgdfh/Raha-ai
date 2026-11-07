@@ -24,8 +24,8 @@ main{padding:15px;max-width:1100px;margin:auto}
  border-radius:12px;padding:15px;margin-bottom:15px
 }
 h3{color:#38bdf8;margin-top:0}
-.status{font-size:13px;color:#fbbf24}
-.chart{height:500px;width:100%}
+.status{font-size:13px;color:#fbbf24;line-height:2}
+.chart{height:500px;width:100%;border:0;border-radius:8px}
 .info{
  display:grid;grid-template-columns:repeat(2,1fr);gap:10px
 }
@@ -33,7 +33,7 @@ h3{color:#38bdf8;margin-top:0}
  background:#17243a;padding:15px;border-radius:9px
 }
 .item span{display:block;color:#94a3b8;font-size:12px}
-.item strong{display:block;margin-top:8px;font-size:18px}
+.item strong{display:block;margin-top:8px;font-size:17px}
 .tf-grid{
  display:grid;grid-template-columns:repeat(2,1fr);gap:10px
 }
@@ -51,6 +51,11 @@ h3{color:#38bdf8;margin-top:0}
 .down{color:#fb7185}
 .muted{color:#94a3b8}
 .divider{border:0;border-top:1px solid #26354c}
+select{
+ width:100%;padding:13px;background:#17243a;color:white;
+ border:1px solid #38bdf8;border-radius:8px;
+ font-size:16px;margin:8px 0
+}
 footer{text-align:center;color:#64748b;padding:25px;font-size:12px}
 @media(max-width:500px){
  .chart{height:420px}
@@ -69,48 +74,53 @@ footer{text-align:center;color:#64748b;padding:25px;font-size:12px}
 <main>
 
 <section class="panel">
- <h3>پنل معاملاتی طلا</h3>
- <div class="status">● نمودار TradingView</div>
- <div class="chart">
-  <div class="tradingview-widget-container"
-       style="height:100%;width:100%">
-   <div class="tradingview-widget-container__widget"
-        style="height:100%;width:100%"></div>
-   <script type="text/javascript"
-    src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"
-    async>
-   {
-    "autosize":true,
-    "symbol":"OANDA:XAUUSD",
-    "interval":"60",
-    "timezone":"Etc/UTC",
-    "theme":"dark",
-    "style":"1",
-    "locale":"en",
-    "allow_symbol_change":false,
-    "calendar":false,
-    "support_host":"https://www.tradingview.com"
-   }
-   </script>
-  </div>
+ <h3>انتخاب نماد معاملاتی</h3>
+
+ <select id="symbolSelect">
+  <option value="GOLD">طلا - OANDA:XAUUSD</option>
+  <option value="BTC">بیت‌کوین - BINANCE:BTCUSDT</option>
+  <option value="ETH">اتریوم - BINANCE:ETHUSDT</option>
+ </select>
+
+ <div id="selectedMarket" class="status">
+  نماد انتخاب‌شده: طلا
  </div>
 </section>
 
 <section class="panel">
+ <h3 id="chartTitle">نمودار زنده طلا</h3>
+
+ <div class="status">● نمودار TradingView</div>
+
+ <iframe
+  id="tradingChart"
+  class="chart"
+  src="https://www.tradingview.com/widgetembed/?symbol=OANDA%3AXAUUSD&interval=60&theme=dark&style=1&locale=en&hide_side_toolbar=1&allow_symbol_change=0"
+  allowtransparency="true"
+  scrolling="no"
+  allowfullscreen>
+ </iframe>
+</section>
+
+<section class="panel">
  <h3>وضعیت موتور RAHA AI</h3>
+
  <div class="info">
   <div class="item">
    <span>نماد معاملاتی</span>
-   <strong>XAUUSD</strong>
+   <strong id="symbolStatus">XAUUSD</strong>
   </div>
+
   <div class="item">
    <span>منبع اطلاعات</span>
-   <strong>XAUS API</strong>
+   <strong id="sourceStatus">XAUS API</strong>
   </div>
+
   <div class="item">
    <span>MACD</span>
    <strong id="macdStatus">در انتظار داده</strong>
   </div>
+
   <div class="item">
    <span>RSI</span>
    <strong id="rsiStatus">در انتظار داده</strong>
@@ -120,11 +130,14 @@ footer{text-align:center;color:#64748b;padding:25px;font-size:12px}
 
 <section class="panel">
  <h3>تحلیل چندتایم‌فریمی RAHA</h3>
+
  <div id="connection" class="status">
-  در حال دریافت اطلاعات طلا...
+  در حال دریافت اطلاعات...
  </div>
+
  <div id="lastUpdate" class="muted"
       style="font-size:12px;margin:10px 0"></div>
+
  <div id="results" class="tf-grid">
   <div class="tf-card">در حال محاسبه...</div>
  </div>
@@ -132,10 +145,17 @@ footer{text-align:center;color:#64748b;padding:25px;font-size:12px}
 
 <section class="panel">
  <h3>نتیجه واگرایی‌ها</h3>
+
  <p id="signal">در انتظار تحلیل...</p>
+
  <div class="status">
   واگرایی به‌تنهایی مجوز ورود به معامله نیست.
  </div>
+</section>
+
+<section class="panel">
+ <h3>وضعیت کندل یک‌ساعته</h3>
+ <div id="countdown" class="status">در حال محاسبه...</div>
 </section>
 
 </main>
@@ -147,7 +167,31 @@ RAHA AI © 2026 | Trading Assistant
 <script>
 "use strict";
 
-const API="https://xaus.com/api/v1/chart";
+/* MARKET SETTINGS */
+
+const markets={
+ GOLD:{
+  name:"طلا",
+  symbol:"OANDA:XAUUSD",
+  source:"XAUS API",
+  type:"gold",
+  apiSymbol:"xau"
+ },
+ BTC:{
+  name:"بیت‌کوین",
+  symbol:"BINANCE:BTCUSDT",
+  source:"Binance API",
+  type:"crypto",
+  apiSymbol:"BTCUSDT"
+ },
+ ETH:{
+  name:"اتریوم",
+  symbol:"BINANCE:ETHUSDT",
+  source:"Binance API",
+  type:"crypto",
+  apiSymbol:"ETHUSDT"
+ }
+};
 
 const configs=[
  {name:"1M",interval:"1m",range:"1d"},
@@ -156,15 +200,130 @@ const configs=[
  {name:"1H",interval:"60m",range:"3mo"}
 ];
 
+let selectedMarket="GOLD";
+let requestNumber=0;
+
+/* TRADINGVIEW CHART */
+
+function changeChart(symbol){
+ const url=
+ "https://www.tradingview.com/widgetembed/?symbol="+
+ encodeURIComponent(symbol)+
+ "&interval=60&theme=dark&style=1&locale=en"+
+ "&hide_side_toolbar=1&allow_symbol_change=0";
+
+ document.getElementById("tradingChart").src=url;
+}
+
+/* NORMALIZE DATA */
+
+function normalizeTime(t){
+ let time=Number(t);
+ if(time>1000000000000)time=time/1000;
+ return time;
+}
+
+/* GOLD DATA */
+
+async function getGoldCandles(config){
+ const url=
+ "https://xaus.com/api/v1/chart?symbol=xau"+
+ "&range="+config.range+
+ "&interval="+config.interval;
+
+ const response=await fetch(url);
+
+ if(!response.ok){
+  throw new Error("دریافت اطلاعات طلا ناموفق بود");
+ }
+
+ const data=await response.json();
+
+ if(!Array.isArray(data.points)){
+  throw new Error("ساختار اطلاعات طلا نامعتبر است");
+ }
+
+ return data.points.map(p=>({
+  t:normalizeTime(p.t),
+  o:Number(p.o),
+  h:Number(p.h),
+  l:Number(p.l),
+  c:Number(p.c),
+  v:Number(p.v||0)
+ })).filter(p=>
+  Number.isFinite(p.t)&&
+  Number.isFinite(p.h)&&
+  Number.isFinite(p.l)&&
+  Number.isFinite(p.c)&&p.c>0
+ ).sort((a,b)=>a.t-b.t);
+}
+
+/* CRYPTO DATA */
+
+async function getCryptoCandles(config){
+ const market=markets[selectedMarket];
+
+ const url=
+ "https://api.binance.com/api/v3/klines?symbol="+
+ market.apiSymbol+
+ "&interval="+config.interval+
+ "&limit=1000";
+
+ const response=await fetch(url);
+
+ if(!response.ok){
+  throw new Error(
+   "دریافت اطلاعات "+market.name+
+   " از Binance ناموفق بود. کد خطا: "+response.status
+  );
+ }
+
+ const data=await response.json();
+
+ if(!Array.isArray(data)){
+  throw new Error("ساختار اطلاعات ارز دیجیتال نامعتبر است");
+ }
+
+ return data.map(k=>({
+  t:normalizeTime(k[0]),
+  o:Number(k[1]),
+  h:Number(k[2]),
+  l:Number(k[3]),
+  c:Number(k[4]),
+  v:Number(k[5])
+ })).filter(p=>
+  Number.isFinite(p.t)&&
+  Number.isFinite(p.h)&&
+  Number.isFinite(p.l)&&
+  Number.isFinite(p.c)&&p.c>0
+ ).sort((a,b)=>a.t-b.t);
+}
+
+/* GET CANDLES */
+
+async function getCandles(config){
+ if(markets[selectedMarket].type==="gold"){
+  return await getGoldCandles(config);
+ }
+
+ return await getCryptoCandles(config);
+}
+
+/* EMA */
+
 function ema(values,period){
  const result=Array(values.length).fill(null);
+
  const valid=values.map((v,i)=>({v,i}))
   .filter(x=>x.v!==null&&Number.isFinite(x.v));
 
  if(valid.length<period)return result;
 
  let sum=0;
- for(let i=0;i<period;i++)sum+=valid[i].v;
+
+ for(let i=0;i<period;i++){
+  sum+=valid[i].v;
+ }
 
  let previous=sum/period;
  result[valid[period-1].i]=previous;
@@ -175,8 +334,11 @@ function ema(values,period){
   previous=valid[i].v*alpha+previous*(1-alpha);
   result[valid[i].i]=previous;
  }
+
  return result;
 }
+
+/* MACD */
 
 function calculateMACD(closes){
  const fast=ema(closes,12);
@@ -197,11 +359,15 @@ function calculateMACD(closes){
  return {line,signal,hist};
 }
 
+/* RSI */
+
 function calculateRSI(closes,period=14){
  const result=Array(closes.length).fill(null);
+
  if(closes.length<=period)return result;
 
- let gain=0,loss=0;
+ let gain=0;
+ let loss=0;
 
  for(let i=1;i<=period;i++){
   const change=closes[i]-closes[i-1];
@@ -228,6 +394,8 @@ function calculateRSI(closes,period=14){
  return result;
 }
 
+/* 4 HOUR AGGREGATION */
+
 function aggregate4H(bars){
  const groups={};
 
@@ -237,70 +405,36 @@ function aggregate4H(bars){
   if(!groups[key]){
    groups[key]={
     t:key*14400,
-    o:bar.o,h:bar.h,l:bar.l,c:bar.c
+    o:bar.o,
+    h:bar.h,
+    l:bar.l,
+    c:bar.c,
+    v:bar.v||0,
+    count:1
    };
   }else{
    groups[key].h=Math.max(groups[key].h,bar.h);
    groups[key].l=Math.min(groups[key].l,bar.l);
    groups[key].c=bar.c;
+   groups[key].v+=(bar.v||0);
+   groups[key].count++;
   }
  });
 
- return Object.values(groups).sort((a,b)=>a.t-b.t);
+ return Object.values(groups)
+  .filter(x=>x.count===4)
+  .sort((a,b)=>a.t-b.t);
 }
 
-async function getCandles(config){
- const url=API+
-  "?symbol=xau"+
-  "&range="+config.range+
-  "&interval="+config.interval;
+/* RAHA DIVERGENCE
+   Last closed candle vs previous two closed candles.
+   No pivot or fractal confirmation.
+*/
 
- const response=await fetch(url);
-
- if(!response.ok){
-  throw new Error("خطای دریافت "+config.name);
- }
-
- const data=await response.json();
-
- if(!Array.isArray(data.points)){
-  throw new Error("ساختار داده نامعتبر است");
- }
-
- return data.points.map(p=>({
-  t:Number(p.t),
-  o:Number(p.o),
-  h:Number(p.h),
-  l:Number(p.l),
-  c:Number(p.c)
- })).filter(p=>
-  Number.isFinite(p.t)&&
-  Number.isFinite(p.h)&&
-  Number.isFinite(p.l)&&
-  Number.isFinite(p.c)&&
-  p.c>0
- ).sort((a,b)=>a.t-b.t);
-}
-
-function findExtremeIndex(bars,start,end,type){
- let index=-1;
-
- for(let i=start;i<end;i++){
-  if(!Number.isFinite(bars[i][type]))continue;
-
-  if(index===-1||
-   (type==="l"&&bars[i].l<bars[index].l)||
-   (type==="h"&&bars[i].h>bars[index].h)){
-   index=i;
-  }
- }
- return index;
-}
-
-function divergence(bars,rsi,macd){
+function divergence(bars,rsi,macdHist){
  const n=bars.length;
 
- if(n<45){
+ if(n<40){
   return {
    rsi:"داده کافی نیست",
    macd:"داده کافی نیست",
@@ -308,48 +442,69 @@ function divergence(bars,rsi,macd){
   };
  }
 
- const split=n-10;
- const oldStart=split-10;
+ const current=n-2;
+ const previous1=n-3;
+ const previous2=n-4;
 
- const oldLow=findExtremeIndex(bars,oldStart,split,"l");
- const newLow=findExtremeIndex(bars,split,n,"l");
-
- const oldHigh=findExtremeIndex(bars,oldStart,split,"h");
- const newHigh=findExtremeIndex(bars,split,n,"h");
+ function valid(arr,i){
+  return i>=0&&
+   arr[i]!==null&&
+   arr[i]!==undefined&&
+   Number.isFinite(arr[i]);
+ }
 
  let rsiDiv="بدون واگرایی";
  let macdDiv="بدون واگرایی";
 
- function valid(arr,i){
-  return i>=0&&arr[i]!==null&&
-   arr[i]!==undefined&&Number.isFinite(arr[i]);
- }
+ const lowerLow=
+  bars[current].l<bars[previous1].l&&
+  bars[current].l<bars[previous2].l;
 
- if(oldLow>=0&&newLow>=0&&
-  valid(rsi,oldLow)&&valid(rsi,newLow)&&
-  bars[newLow].l<bars[oldLow].l&&
-  rsi[newLow]>rsi[oldLow]){
+ const higherHigh=
+  bars[current].h>bars[previous1].h&&
+  bars[current].h>bars[previous2].h;
+
+ const rsiBull=
+  valid(rsi,current)&&
+  valid(rsi,previous1)&&
+  valid(rsi,previous2)&&
+  rsi[current]>rsi[previous1]&&
+  rsi[current]>rsi[previous2];
+
+ const rsiBear=
+  valid(rsi,current)&&
+  valid(rsi,previous1)&&
+  valid(rsi,previous2)&&
+  rsi[current]<rsi[previous1]&&
+  rsi[current]<rsi[previous2];
+
+ const macdBull=
+  valid(macdHist,current)&&
+  valid(macdHist,previous1)&&
+  valid(macdHist,previous2)&&
+  macdHist[current]>macdHist[previous1]&&
+  macdHist[current]>macdHist[previous2];
+
+ const macdBear=
+  valid(macdHist,current)&&
+  valid(macdHist,previous1)&&
+  valid(macdHist,previous2)&&
+  macdHist[current]<macdHist[previous1]&&
+  macdHist[current]<macdHist[previous2];
+
+ if(lowerLow&&rsiBull){
   rsiDiv="واگرایی مثبت";
  }
 
- if(oldHigh>=0&&newHigh>=0&&
-  valid(rsi,oldHigh)&&valid(rsi,newHigh)&&
-  bars[newHigh].h>bars[oldHigh].h&&
-  rsi[newHigh]<rsi[oldHigh]){
+ if(higherHigh&&rsiBear){
   rsiDiv="واگرایی منفی";
  }
 
- if(oldLow>=0&&newLow>=0&&
-  valid(macd,oldLow)&&valid(macd,newLow)&&
-  bars[newLow].l<bars[oldLow].l&&
-  macd[newLow]>macd[oldLow]){
+ if(lowerLow&&macdBull){
   macdDiv="واگرایی مثبت";
  }
 
- if(oldHigh>=0&&newHigh>=0&&
-  valid(macd,oldHigh)&&valid(macd,newHigh)&&
-  bars[newHigh].h>bars[oldHigh].h&&
-  macd[newHigh]<macd[oldHigh]){
+ if(higherHigh&&macdBear){
   macdDiv="واگرایی منفی";
  }
 
@@ -363,8 +518,14 @@ function divergence(bars,rsi,macd){
   strength="واگرایی منفی مشترک";
  }
 
- return {rsi:rsiDiv,macd:macdDiv,strength};
+ return {
+  rsi:rsiDiv,
+  macd:macdDiv,
+  strength
+ };
 }
+
+/* FORMAT */
 
 function format(value){
  return value===null||!Number.isFinite(value)?
@@ -372,21 +533,37 @@ function format(value){
 }
 
 function color(value){
- if(value==="واگرایی مثبت"||value==="واگرایی مثبت مشترک")
+ if(value==="واگرایی مثبت"||
+    value==="واگرایی مثبت مشترک"){
   return "up";
+ }
 
- if(value==="واگرایی منفی"||value==="واگرایی منفی مشترک")
+ if(value==="واگرایی منفی"||
+    value==="واگرایی منفی مشترک"){
   return "down";
+ }
 
  return "muted";
 }
 
+/* TIMEFRAME CARD */
+
 function card(name,bars){
+ if(!bars||bars.length<40){
+  return `
+  <div class="tf-card">
+   <div class="tf-title">${name}</div>
+   <div class="muted">داده کافی نیست</div>
+  </div>`;
+ }
+
  const closes=bars.map(b=>b.c);
  const macd=calculateMACD(closes);
  const rsi=calculateRSI(closes);
 
- const last=closes.length-1;
+ /* Last closed candle */
+ const last=bars.length-2;
+
  const m=macd.line[last];
  const s=macd.signal[last];
  const h=macd.hist[last];
@@ -394,8 +571,11 @@ function card(name,bars){
 
  const div=divergence(bars,rsi,macd.hist);
 
+ const volume=bars[last].v||0;
+
  return `
  <div class="tf-card">
+
   <div class="tf-title">تایم‌فریم ${name}</div>
 
   <div class="value">
@@ -415,14 +595,19 @@ function card(name,bars){
 
   <div class="value">
    <span>وضعیت MACD</span>
-   <strong class="${h>=0?'up':'down'}">
-    ${h>=0?"صعودی":"نزولی"}
+   <strong class="${m>=s?'up':'down'}">
+    ${m>=s?"صعودی":"نزولی"}
    </strong>
   </div>
 
   <div class="value">
    <span>RSI (14)</span>
    <strong>${format(r)}</strong>
+  </div>
+
+  <div class="value">
+   <span>حجم معاملات</span>
+   <strong>${format(volume)}</strong>
   </div>
 
   <hr class="divider">
@@ -442,18 +627,51 @@ function card(name,bars){
    <strong class="${color(div.strength)}">${div.strength}</strong>
   </div>
 
-  <small class="muted">تعداد کندل: ${bars.length}</small>
+  <small class="muted">
+   تعداد کندل: ${bars.length} | آخرین کندل بسته‌شده
+  </small>
+
  </div>`;
 }
 
+/* MAIN UPDATE */
+
 async function update(){
+ const thisRequest=++requestNumber;
+
  const connection=document.getElementById("connection");
  const results=document.getElementById("results");
+ const market=markets[selectedMarket];
 
- connection.textContent="در حال دریافت اطلاعات...";
+ connection.textContent=
+  "در حال دریافت اطلاعات "+market.name+"...";
+
+ results.innerHTML=
+  '<div class="tf-card">در حال محاسبه...</div>';
+
+ document.getElementById("signal").textContent=
+  "در انتظار تحلیل...";
+
+ document.getElementById("symbolStatus").textContent=
+  market.symbol;
+
+ document.getElementById("sourceStatus").textContent=
+  market.source;
 
  try{
-  const all=await Promise.all(configs.map(getCandles));
+  const all=await Promise.all(
+   configs.map(config=>getCandles(config))
+  );
+
+  if(thisRequest!==requestNumber)return;
+
+  for(let i=0;i<all.length;i++){
+   if(!all[i]||all[i].length<40){
+    throw new Error(
+     "تعداد کندل‌های "+configs[i].name+" کافی نیست"
+    );
+   }
+  }
 
   const fourH=aggregate4H(all[3]);
 
@@ -469,30 +687,99 @@ async function update(){
    item=>card(item.name,item.bars)
   ).join("");
 
-  const latest=Math.max(...all.flat().map(b=>b.t));
+  const mainData=all[3];
+  const closes=mainData.map(b=>b.c);
+  const mainMACD=calculateMACD(closes);
+  const mainRSI=calculateRSI(closes);
 
-  connection.textContent=
-   "● اتصال موفق | اطلاعات پنج تایم‌فریم دریافت شد";
+  const div=divergence(
+   mainData,
+   mainRSI,
+   mainMACD.hist
+  );
 
-  document.getElementById("lastUpdate").textContent=
-   "زمان آخرین کندل: "+
-   new Date(latest*1000).toLocaleString("fa-IR");
+  document.getElementById("signal").textContent=
+   "واگرایی یک‌ساعته: "+div.strength+
+   " | RSI: "+div.rsi+
+   " | MACD: "+div.macd;
 
   document.getElementById("macdStatus").textContent="فعال";
   document.getElementById("rsiStatus").textContent="فعال";
 
-  document.getElementById("signal").textContent=
-   "واگرایی‌ها محاسبه شدند؛ هنوز سیگنال ورود صادر نمی‌شود.";
+  const last=mainData[mainData.length-2];
+
+  document.getElementById("lastUpdate").textContent=
+   "قیمت آخرین کندل بسته‌شده: "+
+   last.c+
+   " | زمان: "+
+   new Date(last.t*1000).toLocaleString("fa-IR");
+
+  connection.textContent=
+   "● اتصال موفق | اطلاعات پنج تایم‌فریم دریافت شد";
 
  }catch(error){
+  if(thisRequest!==requestNumber)return;
+
   connection.textContent="خطا: "+error.message;
+
+  results.innerHTML=
+   '<div class="tf-card down">'+
+   'اطلاعات این نماد دریافت نشد.'+
+   '</div>';
+
   document.getElementById("signal").textContent=
-   "دریافت اطلاعات با مشکل روبه‌رو شد.";
+   "تحلیل انجام نشد؛ ابتدا اتصال منبع داده را بررسی کنید.";
+
+  document.getElementById("macdStatus").textContent="نامشخص";
+  document.getElementById("rsiStatus").textContent="نامشخص";
  }
 }
 
+/* SYMBOL SELECTION */
+
+document.getElementById("symbolSelect")
+ .addEventListener("change",function(){
+
+  selectedMarket=this.value;
+
+  const market=markets[selectedMarket];
+
+  document.getElementById("selectedMarket").textContent=
+   "نماد انتخاب‌شده: "+market.name+
+   " | "+market.symbol;
+
+  document.getElementById("chartTitle").textContent=
+   "نمودار زنده "+market.name;
+
+  changeChart(market.symbol);
+
+  update();
+ });
+
+/* CANDLE COUNTDOWN */
+
+function updateCountdown(){
+ const now=Math.floor(Date.now()/1000);
+ const remaining=3600-(now%3600);
+
+ const minutes=Math.floor(remaining/60);
+ const seconds=remaining%60;
+
+ document.getElementById("countdown").textContent=
+  "زمان باقی‌مانده تا بسته شدن کندل یک‌ساعته: "+
+  String(minutes).padStart(2,"0")+
+  ":"+
+  String(seconds).padStart(2,"0");
+}
+
+/* START */
+
+updateCountdown();
+setInterval(updateCountdown,1000);
+
 update();
 setInterval(update,60000);
+
 </script>
 
 </body>
